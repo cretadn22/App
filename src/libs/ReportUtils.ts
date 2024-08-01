@@ -1999,28 +1999,28 @@ function buildParticipantsFromAccountIDs(accountIDs: number[]): Participants {
 /**
  * Returns the report name if the report is a group chat
  */
-function getGroupChatName(participantAccountIDs?: number[], shouldApplyLimit = false, report?: OnyxEntry<Report>): string | undefined {
+function getGroupChatName(participants?: any[], shouldApplyLimit = false, report?: OnyxEntry<Report>): string | undefined {
     // If we have a report always try to get the name from the report.
     if (report?.reportName) {
         return report.reportName;
     }
 
     // Get participantAccountIDs from participants object
-    let participants = participantAccountIDs ?? Object.keys(report?.participants ?? {}).map(Number);
+    let participantIDs = participants?.map((participant) => participant.accountID) ?? Object.keys(report?.participants ?? {}).map(Number);
     if (shouldApplyLimit) {
-        participants = participants.slice(0, 5);
+        participantIDs = participantIDs.slice(0, 5);
     }
-    const isMultipleParticipantReport = participants.length > 1;
+    const isMultipleParticipantReport = participantIDs.length > 1;
 
     if (isMultipleParticipantReport) {
-        return participants
-            .map((participant) => getDisplayNameForParticipant(participant, isMultipleParticipantReport))
+        return participantIDs
+            .map((participantID) => getDisplayNameForParticipant(participantID, isMultipleParticipantReport) || participants?.find((participant) => participant.accountID === participantID)?.login)
             .sort((first, second) => localeCompare(first ?? '', second ?? ''))
             .filter(Boolean)
             .join(', ');
     }
 
-    return Localize.translateLocal('groupChat.defaultReportName', {displayName: getDisplayNameForParticipant(participants[0], false)});
+    return Localize.translateLocal('groupChat.defaultReportName', {displayName: getDisplayNameForParticipant(participantIDs[0], false)});
 }
 
 function getParticipants(reportID: string) {

@@ -61,7 +61,7 @@ function NewChatConfirmPage({newGroupDraft, allPersonalDetails}: NewChatConfirmP
         return options;
     }, [allPersonalDetails, newGroupDraft?.participants]);
 
-    const groupName = newGroupDraft?.reportName ? newGroupDraft?.reportName : ReportUtils.getGroupChatName(participantAccountIDs ?? []);
+    const groupName = newGroupDraft?.reportName ? newGroupDraft?.reportName : ReportUtils.getGroupChatName(newGroupDraft?.participants ?? []);
     const sections: ListItem[] = useMemo(
         () =>
             selectedOptions
