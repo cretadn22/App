@@ -7913,6 +7913,18 @@ function putOnHold(transactionID: string, comment: string, reportID: string, has
                 },
             },
         });
+        failureData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SNAPSHOT}${hash}`,
+            value: {
+                data: {
+                    [`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`]: {
+                        canHold: true,
+                        canUnhold: false,
+                    },
+                },
+            },
+        });
     }
 
     API.write(
@@ -7997,6 +8009,18 @@ function unholdRequest(transactionID: string, reportID: string, hash?: number) {
                     [`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`]: {
                         canHold: true,
                         canUnhold: false,
+                    },
+                },
+            },
+        });
+        failureData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.SNAPSHOT}${hash}`,
+            value: {
+                data: {
+                    [`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`]: {
+                        canHold: false,
+                        canUnhold: true,
                     },
                 },
             },
