@@ -326,6 +326,17 @@ function IOURequestStepScan({
         setReceiptFiles([]);
     }, [isMultiScanEnabled]);
 
+    useEffect(() => {
+        if (isEditing || !isTabActive) {
+            return;
+        }
+    
+    
+        optimisticTransactions?.forEach((t) => {
+            setMoneyRequestReceipt(initialTransactionID, '', '', !isEditing, '');
+        });
+    }, [isTabActive]);
+
     const navigateBack = useCallback(() => {
         Navigation.goBack(backTo);
     }, [backTo]);
