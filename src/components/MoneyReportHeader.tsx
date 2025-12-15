@@ -152,6 +152,7 @@ import ProcessMoneyReportHoldMenu from './ProcessMoneyReportHoldMenu';
 import {useSearchContext} from './Search/SearchContext';
 import AnimatedSettlementButton from './SettlementButton/AnimatedSettlementButton';
 import Text from './Text';
+import getEmptyArray from '@src/types/utils/getEmptyArray';
 
 type MoneyReportHeaderProps = {
     /** The report currently being looked at */
@@ -421,7 +422,9 @@ function MoneyReportHeader({
         },
         [moneyRequestReport, showExportProgressModal, clearSelectedTransactions],
     );
-
+    const [transactionIDsList = getEmptyArray<string>()] = useOnyx(ONYXKEYS.TRANSACTION_THREAD_NAVIGATION_TRANSACTION_IDS, {
+        canBeMissing: true,
+    });
     const [offlineModalVisible, setOfflineModalVisible] = useState(false);
     const {options: originalSelectedTransactionsOptions, handleDeleteTransactions} = useSelectedTransactionsActions({
         report: moneyRequestReport,
@@ -592,6 +595,7 @@ function MoneyReportHeader({
             for (const item of transactionList) {
                 duplicateTransactionAction(
                     item,
+                    transactionIDsList,
                     optimisticChatReportID,
                     optimisticIOUReportID,
                     isASAPSubmitBetaEnabled,

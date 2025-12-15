@@ -833,7 +833,7 @@ function getSecondaryTransactionThreadActions(
     }
 
     // Disabled for now to fix deploy blockers. Will be re-enabled in https://github.com/Expensify/App/pull/77343
-    if (isDuplicateAction(parentReport, [reportTransaction]) && false) {
+    if (isDuplicateAction(parentReport, [reportTransaction])) {
         options.push(CONST.REPORT.TRANSACTION_SECONDARY_ACTIONS.DUPLICATE);
     }
 

@@ -269,6 +269,7 @@ import {clearAllRelatedReportActionErrors} from './ReportActions';
 import {sanitizeRecentWaypoints} from './Transaction';
 import {removeDraftSplitTransaction, removeDraftTransaction, removeDraftTransactions} from './TransactionEdit';
 import {getOnboardingMessages} from './Welcome/OnboardingFlow';
+import { setActiveTransactionIDs } from './TransactionThreadNavigation';
 
 type IOURequestType = ValueOf<typeof CONST.IOU.REQUEST_TYPE>;
 
@@ -451,6 +452,7 @@ type RequestMoneyTransactionParams = Omit<BaseTransactionParams, 'comment'> & {
     pendingFields?: PendingFields<string>;
     distance?: number;
     isLinkedTrackedExpenseReportArchived?: boolean;
+    existingTransactionID?: string;
 };
 
 type PerDiemExpenseTransactionParams = Omit<BaseTransactionParams, 'amount' | 'merchant' | 'customUnitRateID' | 'taxAmount' | 'taxCode' | 'comment'> & {
@@ -6191,10 +6193,10 @@ function requestMoney(requestMoneyInformation: RequestMoneyInformation): {iouRep
     const currentChatReport = isMoneyRequestReport ? getReportOrDraftReport(report?.chatReportID) : report;
     const moneyRequestReportID = isMoneyRequestReport ? report?.reportID : '';
     const isMovingTransactionFromTrackExpense = isMovingTransactionFromTrackExpenseIOUUtils(action);
-    const existingTransactionID =
-        isMovingTransactionFromTrackExpense && linkedTrackedExpenseReportAction && isMoneyRequestAction(linkedTrackedExpenseReportAction)
+    const existingTransactionID = transactionParams.existingTransactionID ??
+        (isMovingTransactionFromTrackExpense && linkedTrackedExpenseReportAction && isMoneyRequestAction(linkedTrackedExpenseReportAction)
             ? getOriginalMessage(linkedTrackedExpenseReportAction)?.IOUTransactionID
-            : undefined;
+            : undefined)
     const existingTransaction =
         action === CONST.IOU.ACTION.SUBMIT
             ? allTransactionDrafts[`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${existingTransactionID}`]
@@ -6892,6 +6894,7 @@ function trackExpense(params: CreateTrackExpenseParams) {
 
 function duplicateExpenseTransaction(
     transaction: OnyxEntry<OnyxTypes.Transaction>,
+    oldTransactionIDsList: string[],
     optimisticChatReportID: string,
     optimisticIOUReportID: string,
     isASAPSubmitBetaEnabled: boolean,
@@ -6905,6 +6908,8 @@ function duplicateExpenseTransaction(
 
     const participants = getMoneyRequestParticipantsFromReport(targetReport);
     const transactionDetails = getTransactionDetails(transaction);
+    const newTransactionID = NumberUtils.rand64()
+    setActiveTransactionIDs([...oldTransactionIDsList, newTransactionID]);
 
     const params: RequestMoneyInformation = {
         report: targetReport,
@@ -6922,6 +6927,7 @@ function duplicateExpenseTransaction(
         transactionParams: {
             ...transaction,
             ...transactionDetails,
+            existingTransactionID: newTransactionID,
             attendees: transactionDetails?.attendees as Attendee[] | undefined,
             comment: transactionDetails?.comment,
             created: format(new Date(), CONST.DATE.FNS_FORMAT_STRING),

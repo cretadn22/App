@@ -79,6 +79,7 @@ import MoneyRequestHeaderStatusBar from './MoneyRequestHeaderStatusBar';
 import MoneyRequestReportTransactionsNavigation from './MoneyRequestReportView/MoneyRequestReportTransactionsNavigation';
 import {useSearchContext} from './Search/SearchContext';
 import {WideRHPContext} from './WideRHPContextProvider';
+import getEmptyArray from '@src/types/utils/getEmptyArray';
 
 type MoneyRequestHeaderProps = {
     /** The report currently being looked at */
@@ -101,6 +102,9 @@ function MoneyRequestHeader({report, parentReportAction, policy, onBackButtonPre
     const route = useRoute<PlatformStackRouteProp<ReportsSplitNavigatorParamList, typeof SCREENS.REPORT> | PlatformStackRouteProp<SearchReportParamList, typeof SCREENS.SEARCH.REPORT_RHP>>();
     const [parentReport] = useOnyx(`${ONYXKEYS.COLLECTION.REPORT}${report?.parentReportID}`, {
         canBeMissing: false,
+    });
+    const [transactionIDsList = getEmptyArray<string>()] = useOnyx(ONYXKEYS.TRANSACTION_THREAD_NAVIGATION_TRANSACTION_IDS, {
+        canBeMissing: true,
     });
     const expensifyIcons = useMemoizedLazyExpensifyIcons(['ArrowSplit', 'ArrowCollapse'] as const);
     const [transaction] = useOnyx(
@@ -179,6 +183,7 @@ function MoneyRequestHeader({report, parentReportAction, policy, onBackButtonPre
             for (const item of transactions) {
                 duplicateTransactionAction(
                     item,
+                    transactionIDsList,
                     optimisticChatReportID,
                     optimisticIOUReportID,
                     isASAPSubmitBetaEnabled,
