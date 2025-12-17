@@ -36,10 +36,24 @@ window.visualViewport?.addEventListener('resize', handleResize);
 
 const dismiss = (): Promise<void> => {
     return new Promise((resolve) => {
-        if (!isVisible || !isMobile()) {
+        if (!isVisible) {
             resolve();
             return;
         }
+
+        let resolved = false;
+
+        const safeResolve = () => {
+            if (resolved) {
+                return; 
+            }
+            resolved = true;
+            resolve();
+
+            // Cleanup listener when resolved
+            clearTimeout(timeoutId);
+            window.visualViewport?.removeEventListener('resize', handleDismissResize);
+        };
 
         const handleDismissResize = () => {
             const viewportHeight = window?.visualViewport?.height;
@@ -53,9 +67,14 @@ const dismiss = (): Promise<void> => {
                 return;
             }
 
-            window.visualViewport?.removeEventListener('resize', handleDismissResize);
-            return resolve();
+            safeResolve();
         };
+
+        // Safari fallback: resolve even if the keyboard never closes
+        const timeoutId = setTimeout(() => {
+            console.log("safeResolve")
+            safeResolve();
+        }, 150);
 
         window.visualViewport?.addEventListener('resize', handleDismissResize);
         Keyboard.dismiss();
