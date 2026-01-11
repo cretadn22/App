@@ -11,6 +11,7 @@ import useLocalize from '@hooks/useLocalize';
 import useOnyx from '@hooks/useOnyx';
 import usePrevious from '@hooks/usePrevious';
 import {isSafari} from '@libs/Browser';
+import DomUtils from '@libs/DomUtils';
 import {prepareValues} from '@libs/ValidationUtils';
 import Visibility from '@libs/Visibility';
 import {clearErrorFields, clearErrors, setDraftValues, setErrors as setFormErrors} from '@userActions/FormActions';
@@ -407,6 +408,11 @@ function FormProvider({
                         // web and mobile web platforms.
 
                         setTimeout(() => {
+                            // Skip validation if the same input regained focus.
+                            // This handles programmatic blur/focus cycles (e.g., showing keyboard on mobile web).
+                            if (DomUtils.getActiveElement() === event.target) {
+                                return;
+                            }
                             if (
                                 relatedTargetId === CONST.OVERLAY.BOTTOM_BUTTON_NATIVE_ID ||
                                 relatedTargetId === CONST.OVERLAY.TOP_BUTTON_NATIVE_ID ||

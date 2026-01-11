@@ -14,6 +14,7 @@ function TextInput({ref, ...props}: BaseTextInputProps) {
     const styles = useThemeStyles();
     const textInputRef = useRef<HTMLFormElement | null>(null);
     const removeVisibilityListenerRef = useRef<RemoveVisibilityListener>(null);
+    const wasHiddenRef = useRef(false);
 
     useEffect(() => {
         let removeVisibilityListener = removeVisibilityListenerRef.current;
@@ -26,11 +27,36 @@ function TextInput({ref, ...props}: BaseTextInputProps) {
         }
 
         removeVisibilityListener = Visibility.onVisibilityChange(() => {
-            if (!isMobileChrome() || !Visibility.isVisible() || !textInputRef.current || DomUtils.getActiveElement() !== textInputRef.current) {
+            const isVisible = Visibility.isVisible();
+
+            if (!isVisible) {
+                wasHiddenRef.current = true;
                 return;
             }
-            textInputRef.current.blur();
-            textInputRef.current.focus();
+
+            if (!isMobileChrome() || !textInputRef.current || DomUtils.getActiveElement() !== textInputRef.current) {
+                return;
+            }
+
+            const showKeyboard = () => {
+                if (!textInputRef.current) {
+                    return;
+                }
+                // Blur and refocus to trigger keyboard. FormProvider will skip validation
+                // because the same input regains focus immediately (checked via DomUtils.getActiveElement).
+                textInputRef.current.blur();
+                textInputRef.current.focus();
+            };
+
+            // Use setTimeout when returning from background to ensure app is fully foregrounded.
+            // The visibilitychange event fires before Android fully restores the app, and the
+            // Input Method Manager requires the app to be fully in the foreground to show the keyboard.
+            if (wasHiddenRef.current) {
+                wasHiddenRef.current = false;
+                setTimeout(showKeyboard, 300);
+            } else {
+                showKeyboard();
+            }
         });
 
         return () => {
