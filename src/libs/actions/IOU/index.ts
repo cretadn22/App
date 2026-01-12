@@ -14532,6 +14532,27 @@ function updateSplitTransactions({
                 errors: null,
             },
         });
+        optimisticData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION}${transactionData?.splitExpenses?.at(0)?.transactionID}`,
+            value: {
+                shouldHideInOffline: true,
+            },
+        });
+        successData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION}${transactionData?.splitExpenses?.at(0)?.transactionID}`,
+            value: {
+                shouldHideInOffline: null,
+            },
+        });
+        failureData.push({
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: `${ONYXKEYS.COLLECTION.TRANSACTION}${transactionData?.splitExpenses?.at(0)?.transactionID}`,
+            value: {
+                shouldHideInOffline: null,
+            },
+        });
     }
 
     if (isReverseSplitOperation) {

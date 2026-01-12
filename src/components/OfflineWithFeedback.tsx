@@ -65,6 +65,8 @@ type OfflineWithFeedbackProps = Partial<ChildrenProps> & {
     /** Whether we should force opacity */
     shouldForceOpacity?: boolean;
 
+    shouldHideInOffline?: boolean;
+
     /** A function to dismiss error */
     dismissError?: () => void;
 };
@@ -84,6 +86,7 @@ function OfflineWithFeedback({
     shouldShowErrorMessages = true,
     style,
     shouldDisplayErrorAbove = false,
+    shouldHideInOffline = false,
     shouldForceOpacity = false,
     dismissError = () => {},
     errorRowTextStyles,
@@ -100,7 +103,7 @@ function OfflineWithFeedback({
     const isAddError = hasErrors && pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD;
     const needsOpacity = (!shouldDisableOpacity && ((isOfflinePendingAction && !isUpdateOrDeleteError) || isAddError)) || shouldForceOpacity;
     const needsStrikeThrough = !shouldDisableStrikeThrough && isOffline && pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
-    const hideChildren = shouldHideOnDelete && !isOffline && pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && !hasErrors;
+    const hideChildren = (shouldHideOnDelete && !isOffline && pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE && !hasErrors) || (shouldHideInOffline && isOffline)
     let children = restProps.children;
     const hasChildren = !!children;
 

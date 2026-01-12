@@ -106,7 +106,7 @@ function MoneyRequestReportTransactionItem({
     });
 
     return (
-        <OfflineWithFeedback pendingAction={pendingAction}>
+        <OfflineWithFeedback pendingAction={pendingAction} shouldHideInOffline={transaction?.shouldHideInOffline ?? false}>
             <PressableWithFeedback
                 key={transaction.transactionID}
                 onPress={() => {

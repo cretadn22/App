@@ -602,6 +602,8 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
 
         /** Transaction type */
         transactionType?: string;
+
+        shouldHideInOffline?: boolean;
     },
     keyof Comment | keyof TransactionCustomUnit | 'attendees'
 >;
