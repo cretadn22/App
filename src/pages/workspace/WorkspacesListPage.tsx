@@ -1,10 +1,12 @@
 import {useIsFocused, useRoute} from '@react-navigation/native';
 import {Str} from 'expensify-common';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {FlatList, InteractionManager, View} from 'react-native';
+import type {ScrollViewProps} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import ConfirmModal from '@components/ConfirmModal';
+import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 import type {DomainItem} from '@components/Domain/DomainMenuItem';
 import DomainMenuItem from '@components/Domain/DomainMenuItem';
 import DomainsEmptyStateComponent from '@components/DomainsEmptyStateComponent';
@@ -145,6 +147,8 @@ function WorkspacesListPage() {
     const [lastPaymentMethod] = useOnyx(ONYXKEYS.NVP_LAST_PAYMENT_METHOD);
     const shouldShowLoadingIndicator = isLoadingApp && !isOffline;
     const route = useRoute<PlatformStackRouteProp<AuthScreensParamList, typeof SCREENS.WORKSPACES_LIST>>();
+    const {saveScrollOffset, getScrollOffset} = useContext(ScrollOffsetContext);
+    const scrollOffsetToRestore = useRef(getScrollOffset(route) ?? 0);
     const [fundList] = useOnyx(ONYXKEYS.FUND_LIST);
     const [duplicateWorkspace] = useOnyx(ONYXKEYS.DUPLICATE_WORKSPACE);
     const {isRestrictedToPreferredPolicy, preferredPolicyID, isRestrictedPolicyCreation} = usePreferredPolicy();
@@ -495,6 +499,41 @@ function WorkspacesListPage() {
         Navigation.navigate(ROUTES.WORKSPACE_OVERVIEW.getRoute(policyID));
     };
 
+    const viewportHeightRef = useRef(0);
+    const currentScrollOffset = useRef(0);
+    const onScroll = useCallback<NonNullable<ScrollViewProps['onScroll']>>(
+        (e) => {
+            if (e.nativeEvent.layoutMeasurement.height === 0) {
+                return;
+            }
+            currentScrollOffset.current = e.nativeEvent.contentOffset.y;
+        },
+        [],
+    );
+
+    const onContentSizeChange = useCallback(() => {
+        const offset = getScrollOffset(route)
+        if (!offset || !flatlistRef.current || !viewportHeightRef.current) {
+            return;
+        }
+        flatlistRef.current.scrollToOffset({offset, animated: false});
+        scrollOffsetToRestore.current = 0;
+        if (offset === currentScrollOffset.current) {
+            saveScrollOffset(route, 0);
+        }
+    }, [getScrollOffset, route, saveScrollOffset]);
+
+    const onFlatListLayout = useCallback((e: {nativeEvent: {layout: {height: number}}}) => {
+        const offset = getScrollOffset(route)
+        viewportHeightRef.current = e.nativeEvent.layout.height;
+        if (offset && flatlistRef.current) {
+            flatlistRef.current.scrollToOffset({offset, animated: false});
+            if (offset === currentScrollOffset.current) {
+                saveScrollOffset(route, 0);
+            }
+        }
+    }, [getScrollOffset, route, saveScrollOffset]);
+
     const navigateToDomain = ({domainAccountID, isAdmin}: {domainAccountID: number; isAdmin: boolean}) => {
         if (!isAdmin) {
             return Navigation.navigate(ROUTES.WORKSPACES_DOMAIN_ACCESS_RESTRICTED.getRoute(domainAccountID));
@@ -561,7 +600,10 @@ function WorkspacesListPage() {
                     listItemType: 'workspace',
                     title: policy.name,
                     icon: policy.avatarURL ? policy.avatarURL : getDefaultWorkspaceAvatar(policy.name),
-                    action: () => navigateToWorkspace(policy.id),
+                    action: () => {
+                        saveScrollOffset(route, currentScrollOffset.current);
+                        navigateToWorkspace(policy.id)
+                    },
                     brickRoadIndicator,
                     pendingAction: policy.pendingAction,
                     errors: policy.errors,
@@ -595,7 +637,10 @@ function WorkspacesListPage() {
                   listItemType: 'domain',
                   accountID: domain.accountID,
                   title: Str.extractEmailDomain(domain.email),
-                  action: () => navigateToDomain({domainAccountID: domain.accountID, isAdmin}),
+                  action: () => {
+                    saveScrollOffset(route, currentScrollOffset.current);
+                    navigateToDomain({domainAccountID: domain.accountID, isAdmin})
+                },
                   isAdmin,
                   isValidated: domain.validated,
                   pendingAction: domain.pendingAction,
@@ -683,6 +728,12 @@ function WorkspacesListPage() {
     const data: WorkspaceOrDomainListItem[] = [
         !workspaces.length ? [{listItemType: 'workspaces-empty-state' as const}] : [],
         filteredWorkspaces,
+        filteredWorkspaces,
+        filteredWorkspaces,
+        filteredWorkspaces,
+        filteredWorkspaces,
+        filteredWorkspaces,
+        filteredWorkspaces,
         shouldShowDomainsSection ? [{listItemType: 'domains-header' as const}, ...domains] : [],
         shouldShowDomainsSection && !domains.length ? [{listItemType: 'domains-empty-state' as const}] : [],
     ].flat();
@@ -755,6 +806,9 @@ function WorkspacesListPage() {
                         ListHeaderComponent={listHeaderComponent}
                         keyboardShouldPersistTaps="handled"
                         contentContainerStyle={styles.pb20}
+                        onScroll={onScroll}
+                        onContentSizeChange={onContentSizeChange}
+                        onLayout={onFlatListLayout}
                     />
                 )}
             </View>
